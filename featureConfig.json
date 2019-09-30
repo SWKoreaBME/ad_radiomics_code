@@ -1,0 +1,18 @@
+{
+    "imageType" : {
+        "Original" : {}
+    },
+    "featureClass" : {
+        "shape" : [],
+        "firstorder" : [],
+        "glcm" : [],
+        "glrlm" : [],
+        "gldm" : [],
+        "glszm" : [],
+        "ngtdm" : []
+    },
+    "setting" : {
+        "binWidth" : 25,
+        "resampledPixelSpacing": [1,1,1]
+    }
+}
