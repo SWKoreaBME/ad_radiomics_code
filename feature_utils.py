@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+import imageio
 
 def dummy_labelize_swk(data, n_classes):
 
@@ -43,3 +44,22 @@ def boxplot():
     b.tick_params(labelsize=30)
 
     return 
+
+def mask_oversize(sample_image):
+    """half image --> fill rest of the half image with zero : with Full size 
+    
+    Arguments:
+        sample_image {[type]} -- [description]
+    
+    Returns:
+        result_image : full image with numpy array
+    """
+    img_arr = imageio.imread(sample_image)
+    null_image = np.multiply(img_arr, 0)
+    
+    if 'left' in sample_image :
+        result_image = np.hstack([null_image, img_arr])
+    elif 'right' in sample_image :
+        result_image = np.hstack([img_arr, null_image])
+        
+    return result_image
