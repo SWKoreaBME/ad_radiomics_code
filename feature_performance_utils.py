@@ -195,13 +195,15 @@ def Validation(clf, X_test, y_test):
         average_method = 'binary'
     else:
         average_method = None
-    
-    confusion = confusion_matrix(y_test, y_pred)
+
+    if average_method == 'binary':
+        confusion = confusion_matrix(y_test, y_pred)
+        print('confusion : ', confusion)
+
     test_precision_score = precision_score(y_test, y_pred, average=average_method)
     test_f1_score = f1_score(y_test, y_pred, average=average_method)
     test_acc = accuracy_score(y_test, y_pred)
 
-    print('confusion : ', confusion)
     print('Accuracy : %.3f' %test_acc)
     print('roc-auc score : %.3f' %test_auc_score)
     print('f1 score : %.3f' %test_f1_score)

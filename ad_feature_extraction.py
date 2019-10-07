@@ -20,9 +20,10 @@ import time
 
 parser = argparse.ArgumentParser(description="AD radiomics haralick + wavelet feature extraction parameters")
 parser.add_argument("-o", dest = "file_name", help="output file name")
-parser.add_argument("-i", dest = "image_folder", help="image directory")
-parser.add_argument("-m", dest = "mask_folder", help="mask directory")
+parser.add_argument("-i", dest = "image_folder", help="image directory", default="../data/zscore_image/")
+parser.add_argument("-m", dest = "mask_folder", help="mask directory", default="../data/left_mask/")
 parser.add_argument("-p", dest = "params", help="parameter setting file name", default = 'featureConfig.json')
+parser.add_argument("-n", dest = "index", help="index of image", default = 0, type=int)
 
 args = parser.parse_args()
 
@@ -30,7 +31,7 @@ args = parser.parse_args()
 
 def read_image(file):
     if '.nii' in file:
-        img_arr = nib.load(file).get_data()
+        img_arr = nib.load(file).get_data().astype('float')
     else:
         img_arr = imageio.imread(file)
 
@@ -73,6 +74,10 @@ if len(os.listdir(img_folder)) != len(os.listdir(mask_folder)):
 start = time.time()
 errors = []
 
+image_list = sorted(os.listdir(img_folder))
+mask_list = sorted(os.listdir(mask_folder))
+idx_ = args.index
+
 for image, mask in zip(sorted(os.listdir(img_folder)),sorted(os.listdir(mask_folder))):
 
     print(image, mask)
@@ -80,7 +85,8 @@ for image, mask in zip(sorted(os.listdir(img_folder)),sorted(os.listdir(mask_fol
     whole_vals = []
     whole_cols = []
     
-    subject_name = image.split('.nii')[0]
+    subject_name = mask.split('.nii')[0]
+    # subject_name = image.split('.nii')[0]
     
 #     image_nii = nib.load(os.path.join(img_folder, image))
 #     mask_nii = nib.load(os.path.join(mask_folder, mask))
@@ -136,6 +142,7 @@ for image, mask in zip(sorted(os.listdir(img_folder)),sorted(os.listdir(mask_fol
         continue
     
     # break
+
     
 end = time.time()
 print(end - start, ' seconds for feature extraction')
@@ -145,7 +152,10 @@ print('feature extraction done')
 
 df = pd.DataFrame.from_dict(feature_dict).T
 df.columns = whole_cols
+
+# file_name = subject_name + '.csv'
 df.to_csv(args.file_name)
+# df.to_csv(os.path.join('../result/', file_name))
 
 print('saved')
 print('errors : ', errors)

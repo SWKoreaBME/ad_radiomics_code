@@ -32,8 +32,8 @@ def GridRF(X_train, y_train, random_state, cv):
     param_grid = { 
         'n_estimators': [200,300,400,500],
         'max_features': ['auto'],
-        'max_depth' : [2,3,4,5,6,7,8],
-        'criterion' :['gini', 'entropy'],
+        'max_depth' : [8],
+        'criterion' :['gini'],
         'class_weight' : [None]
     }
 
@@ -66,10 +66,10 @@ def GridXGB(X_train, y_train, random_state, cv):
     xgbc = xgb.XGBClassifier(random_state=random_state, n_jobs = -1)
 
     param_grid = { 
-        'n_estimators': [100,200,500],
-        'max_depth' : [2,3,4,5,6,7,8],
-        'learning_rate' : [1.0, 0.1, 0.01],
-        'booster' : ['gbtree', 'dart']
+        'n_estimators': [200,500],
+        'max_depth' : [7,8],
+        'learning_rate' : [0.1, 0.01],
+        'booster' : ['gbtree',]
     }
     # param_grid = { 
     #     'n_estimators': [100],
