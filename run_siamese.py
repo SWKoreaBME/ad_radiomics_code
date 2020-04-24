@@ -1,4 +1,5 @@
 import argparse
+import cv2
 import os
 import random
 import shutil
@@ -20,7 +21,7 @@ import torchvision.models as models
 
 from torch.utils.tensorboard import SummaryWriter
 
-from Siamese import OsteoSiameseDataset, OsteoSiameseNet, train_test_split, getPairList, getExternalPairList, random_over_sampling
+from Siamese import train_test_split, getPairList, AdSiameseDataset, AdSiameseNet
 from sklearn.metrics import roc_auc_score
 import numpy as np
 
@@ -96,7 +97,6 @@ parser.add_argument('--multiprocessing-distributed', action='store_true',
 
 best_acc1 = 0
 
-
 def main():
     args = parser.parse_args()
 
@@ -152,9 +152,9 @@ def main_worker(gpu, ngpus_per_node, args):
         print("=> using pre-trained model '{}'".format(args.arch))
         model = models.__dict__[args.arch](pretrained=True)
     else:
-        print("=> creating model '{}'".format('Osteo-Siamese Network'))
+        print("=> creating model '{}'".format('Ad-Siamese Network'))
         # model = models.__dict__[args.arch]()
-        model = OsteoSiameseNet(32, 0.3, 2, True)
+        model = AdSiameseNet(32, 0.3, 2, True).double()
     
     if args.distributed:
         # For multiprocessing distributed, DistributedDataParallel constructor
@@ -216,32 +216,35 @@ def main_worker(gpu, ngpus_per_node, args):
     TB = TensorBoard()
 
     # Data loading code
-    image_dir = os.path.join(args.data)
+    def reshape(low_image, target_slice_num=32):
+        low_image = low_image.astype(np.float)
+        resized_arr = cv2.resize(low_image, (target_slice_num, target_slice_num), interpolation=cv2.INTER_CUBIC)
+        low_image_T = np.transpose(resized_arr, (0, 2, 1))
+        resized = cv2.resize(low_image_T, (target_slice_num, target_slice_num), interpolation=cv2.INTER_CUBIC)
+        restored_image = np.transpose(resized, (0, 2, 1))
+        return restored_image
 
-    # pair_list = getPairList(image_dir, duplicate=args.duplicate)
-    pair_list = getExternalPairList(image_dir)
+    pair_list = getPairList(left_dir='../Data/ad_radiomics/dl/image/left/',
+                        right_dir='../Data/ad_radiomics/dl/image/right/')
+
+    train_pairs, test_pairs = train_test_split(pair_list, train_ratio=0.8, ros=True)
 
     transform = transforms.Compose([
-            transforms.ToPILImage(),
-            transforms.Resize((args.height_size, args.width_size)),
+            transforms.Lambda(reshape),
             transforms.ToTensor()
         ])
 
-    if args.save_fc_only:
-        whole_dataset = OsteoSiameseDataset(pair_list, transform)
+    train_dataset = AdSiameseDataset(train_pairs, transform=transform)
+    test_dataset = AdSiameseDataset(test_pairs, transform=transform)
 
-        whole_loader = torch.utils.data.DataLoader(
-            whole_dataset,
-            batch_size=args.batch_size, shuffle=False,
-            num_workers=args.workers, pin_memory=True)
+    if args.save_fc_only:
+        whole_dataset = AdSiameseDataset(pair_list, transform=transform)
+        whole_loader = torch.utils.data.DataLoader(whole_dataset,
+                                                   batch_size=args.batch_size, shuffle=False,
+                                                   num_workers=args.workers, pin_memory=True)
+
         validate(whole_loader, model.module.cuda(), criterion, 1, args, TB)
         return
-
-    val_list, train_list = train_test_split(pair_list)
-    train_list = random_over_sampling(train_list)
-
-    train_dataset = OsteoSiameseDataset(train_list, transform)
-    validation_dataset = OsteoSiameseDataset(val_list, transform)
 
     if args.distributed:
         train_sampler = torch.utils.data.distributed.DistributedSampler(train_dataset)
@@ -253,7 +256,7 @@ def main_worker(gpu, ngpus_per_node, args):
         num_workers=args.workers, pin_memory=True, sampler=train_sampler)
 
     val_loader = torch.utils.data.DataLoader(
-        validation_dataset,
+        test_dataset,
         batch_size=args.batch_size, shuffle=False,
         num_workers=args.workers, pin_memory=True)
 
