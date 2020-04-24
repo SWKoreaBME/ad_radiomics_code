@@ -30,8 +30,6 @@ model_names = sorted(name for name in models.__dict__
     and callable(models.__dict__[name]))
 
 parser = argparse.ArgumentParser(description='PyTorch Training Code')
-parser.add_argument('data', metavar='DIR', default = '../Data/femur_head_original_size/original',
-                    help='path to dataset')
 parser.add_argument('-a', '--arch', metavar='ARCH', default='densenet121',
                     choices=model_names,
                     help='model architecture: ' +
@@ -43,10 +41,6 @@ parser.add_argument('--epochs', default=200, type=int, metavar='N',
                     help='number of total epochs to run')
 parser.add_argument('--start-epoch', default=0, type=int, metavar='N',
                     help='manual epoch number (useful on restarts)')
-parser.add_argument('--height_size', default=224, type=int, metavar='N',
-                    help='height of input image (default : 224)')
-parser.add_argument('--width_size', default=224, type=int, metavar='N',
-                    help='width of input images (default : 224)')
 parser.add_argument('-b', '--batch-size', default=8, type=int,
                     metavar='N',
                     help='mini-batch size (default: 256), this is the total '
@@ -511,6 +505,6 @@ def save_fc(left_vector, right_vector, names, path):
     for lv, rv, name in zip(left_vector, right_vector, names):
         np.save(os.path.join(path, name + '_0.npy'), lv)
         np.save(os.path.join(path, name + '_1.npy'), rv)
-
+        
 if __name__ == '__main__':
     main()
